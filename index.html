@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Countdown</title>
+	<style>
+		html,
+		body {
+			position: relative;
+			padding: 0;
+			margin: 0;
+		}
+
+		.root {
+			width: 100vw;
+			height: 100vh;
+			align-items: center;
+			justify-items: center;
+			display: flex;
+			justify-content: space-around;
+			font-size: 20vw;
+			gap: 0.1em;
+			font-family: sans-serif;
+		}
+
+		.unit {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.unit__label {
+			font-size: 0.25em;
+		}
+	</style>
+</head>
+
+<body>
+	<!-- MjAyMi0wNy0zMFQxMToxOTo0MS45NjBa -->
+	<script>
+		(() => {
+			const MS_PER_S = 1000;
+			const MS_PER_M = MS_PER_S * 60;
+			const MS_PER_H = MS_PER_M * 60;
+			const MS_PER_D = MS_PER_H * 24;
+
+			const usp = Object.fromEntries(new URLSearchParams(window.location.search));
+			let endLabel;
+			let endT;
+
+			if (usp.hash) {
+				const [hashDate, hashLabel] = atob(usp.hash).split("|");
+				endLabel = hashLabel;
+				endT = new Date(hashDate).getTime();
+			}
+
+			if (!endLabel) endLabel = usp.endLabel;
+			if (typeof endT !== "number" || isNaN(endT)) endT = usp.endDate;
+			if (typeof endT !== "number") throw new Error("No date provided");
+			if (isNaN(endT)) throw new Error("Invalid date provided");
+
+			const rootEl = document.createElement("div");
+			rootEl.className = "root";
+			document.body.append(rootEl);
+
+			const numEls = ["days", "hours", "minutes", "seconds"].reduce((acc, unit) => {
+				const unitEl = document.createElement("div");
+				unitEl.className = "unit";
+				rootEl.append(unitEl);
+
+				const numEl = document.createElement("div");
+				numEl.className = "unit__number";
+				numEl.textContent = "0";
+				unitEl.append(numEl);
+
+				const labelEl = document.createElement("div");
+				labelEl.className = "unit__label";
+				labelEl.textContent = unit;
+				unitEl.append(labelEl);
+
+				acc[unit] = numEl;
+
+				return acc;
+			}, {});
+
+			function leftPadZeros(value, length = 2) {
+				value = `${value}`;
+				for (let i = value.length; i < length; i++) value = `0${value}`;
+				return value;
+			}
+			
+			function update() {
+				const t = new Date().getTime();
+				let diff = Math.max(endT - t, 0);
+
+				function offsetBy(msPerUnit) {
+					const wholeUnits = Math.floor(diff / msPerUnit);
+					diff -= wholeUnits * msPerUnit;
+					return wholeUnits;
+				}
+
+				const days = offsetBy(MS_PER_D);
+				const hours = leftPadZeros(offsetBy(MS_PER_H));
+				const minutes = leftPadZeros(offsetBy(MS_PER_M));
+				const seconds = leftPadZeros(offsetBy(MS_PER_S));
+
+				numEls.days.textContent = days;
+				numEls.hours.textContent = hours;
+				numEls.minutes.textContent = minutes;
+				numEls.seconds.textContent = seconds;
+
+				document.title = `${days}:${hours}:${minutes}:${seconds}`;
+			}
+
+			setInterval(update, 100);
+			update();
+		})();
+	</script>
+</body>
+
+</html>
